@@ -3,7 +3,8 @@ import { createServer } from 'http';
 import path from 'path';
 import Crypto from 'crypto';
 
-const PORT = 3004;
+// ✅ Render ke liye PORT dynamic karo
+const PORT = process.env.PORT || 3004;
 const data_file = path.join('data', 'links.json');
 
 const serverFile = async (res, filePath, contentType) => {
@@ -38,24 +39,21 @@ const server = createServer(async (req, res) => {
   if (req.method === 'GET') {
     if (req.url === '/') {
       return serverFile(res, path.join('public', 'index.html'), 'text/html');
-    }
-
-   else if (req.url === '/style.css') {
+    } else if (req.url === '/style.css') {
       return serverFile(res, path.join('public', 'style.css'), 'text/css');
-    }else if(req.url === "/links"){
-       const links = await loadlinks();
-       res.writeHead(200,{"Content-Type": "application/json"});
-       return res.end(JSON.stringify(links));
-    }else{
+    } else if (req.url === "/links") {
+      const links = await loadlinks();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify(links));
+    } else {
       const links = await loadlinks();
       const shortCode = req.url.slice(1);
-      console.log("links red.", req.url);
-      if(links[shortCode]){
-        res.writeHead(302,{location: links[shortCode]});
+      if (links[shortCode]) {
+        res.writeHead(302, { location: links[shortCode] });
         return res.end();
       }
-      res.writeHead(404,{"Content-Type": "Text/plain"});
-        return res.end("Shortend url is not found");
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      return res.end("Shortened URL not found");
     }
   }
 
@@ -66,8 +64,6 @@ const server = createServer(async (req, res) => {
     req.on('data', chunk => body += chunk);
 
     req.on('end', async () => {
-      console.log('Received URL to shorten:', body);
-
       const { url, shortCode } = JSON.parse(body);
 
       if (!url) {
@@ -91,6 +87,7 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// ✅ Bind to all interfaces for Render
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on port ${PORT}`);
 });
